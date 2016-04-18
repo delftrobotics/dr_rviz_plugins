@@ -1,0 +1,7 @@
+<library path="libdr_rviz_plugins">
+	<class name="dr_rviz_plugin/PoseArray" type="dr::PoseArrayDisplay" base_class_type="rviz::Display">
+		<description>
+			Displays a pose array as either a 3D arrow or set of axes.
+		</description>
+	</class>
+</library>

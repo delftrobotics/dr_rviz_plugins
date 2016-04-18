@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+	<name>dr_rviz_plugins</name>
+	<version>1.0.0</version>
+	<description>Delft Robotics rviz plugins</description>
+	<license>Apache v2.0</license>
+	<author email="maarten@de-vri.es">Maarten de Vries</author>
+	<maintainer email="maarten@de-vri.es">Maarten de Vries</maintainer>
+
+	<buildtool_depend>catkin</buildtool_depend>
+	<depend>dr_base</depend>
+	<depend>roscpp</depend>
+	<depend>class_loader</depend>
+	<depend>rviz</depend>
+	<depend>tf</depend>
+	<depend>ogre</depend>
+
+	<export>
+		<rviz plugin="${prefix}/plugin_descriptions.xml"/>
+	</export>
+</package>
