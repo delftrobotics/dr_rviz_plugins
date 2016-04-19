@@ -142,6 +142,7 @@ public:
 	virtual ~PoseArrayDisplay() {}
 
 protected:
+	/// Process a pose array message.
 	virtual void processMessage(const geometry_msgs::PoseArray::ConstPtr& msg) {
 		if (!setTransform(msg->header)) return;
 
@@ -157,6 +158,15 @@ protected:
 		context_->queueRender();
 	}
 
+	/// Reset the plugin state.
+	virtual void reset() {
+		rviz::MessageFilterDisplay<geometry_msgs::PoseArray>::reset();
+		poses_.clear();
+		axes_.clear();
+		arrows_.clear();
+	}
+
+	/// Set the scene transform.
 	bool setTransform(std_msgs::Header const & header) {
 		Ogre::Vector3 position;
 		Ogre::Quaternion orientation;
@@ -169,6 +179,7 @@ protected:
 		return true;
 	}
 
+	/// Update the correct object list.
 	void updateObjects() {
 		int shape = shape_property_.getOptionInt();
 
@@ -181,6 +192,7 @@ protected:
 		}
 	}
 
+	/// Update the arrow list.
 	void updateArrows() {
 		while (arrows_.size() < poses_.size()) arrows_.push_back(makeArrow());
 		arrows_.resize(poses_.size(), NULL);
@@ -192,6 +204,7 @@ protected:
 		}
 	}
 
+	/// Update the axes list.
 	void updateAxes() {
 		while (axes_.size() < poses_.size()) axes_.push_back(makeAxes());
 		axes_.resize(poses_.size(), NULL);
@@ -201,6 +214,7 @@ protected:
 		}
 	}
 
+	/// Create a new arrow shape with the proper properties.
 	rviz::Arrow * makeArrow() {
 		Ogre::ColourValue color = color_property_.getOgreColor();
 		color.a                 = alpha_property_.getFloat();
@@ -218,6 +232,7 @@ protected:
 		return arrow;
 	}
 
+	/// Create a new axes shape with the proper properties.
 	rviz::Axes * makeAxes() {
 		return new rviz::Axes(
 			scene_manager_,
@@ -228,6 +243,7 @@ protected:
 	}
 
 private Q_SLOTS:
+	/// Update the arrow color.
 	void updateColorAndAlpha() {
 		Ogre::ColourValue color = color_property_.getOgreColor();
 		color.a                 = alpha_property_.getFloat();
@@ -235,6 +251,7 @@ private Q_SLOTS:
 		context_->queueRender();
 	}
 
+	/// Update the interface and visible shapes based on the selected shape type.
 	void updateShapeChoice() {
 		int shape = shape_property_.getOptionInt();
 		bool use_arrow = shape == ShapeType::Arrow;
@@ -260,6 +277,7 @@ private Q_SLOTS:
 		context_->queueRender();
 	}
 
+	/// Update the arrow geometry.
 	void updateArrowGeometry() {
 		for (std::size_t i = 0; i < poses_.size(); ++i) {
 			arrows_[i].set(
@@ -272,6 +290,7 @@ private Q_SLOTS:
 		context_->queueRender();
 	}
 
+	/// Update the axes geometry.
 	void updateAxesGeometry() {
 		for (std::size_t i = 0; i < poses_.size(); ++i) {
 			axes_[i].set(
