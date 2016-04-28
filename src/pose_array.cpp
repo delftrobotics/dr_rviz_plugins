@@ -52,8 +52,7 @@ namespace dr {
 
 namespace {
 
-	bool validateFloats( const geometry_msgs::PoseArray& msg )
-	{
+	bool validateFloats( const geometry_msgs::PoseArray& msg ) {
 		return rviz::validateFloats( msg.poses );
 	}
 
@@ -98,8 +97,8 @@ private:
 	Ogre::SceneNode * axes_node_;
 
 	std::vector<OgrePose> poses_;
-	boost::ptr_vector<rviz::Arrow, boost::view_clone_allocator> arrows_;
-	boost::ptr_vector<rviz::Axes,  boost::view_clone_allocator> axes_;
+	boost::ptr_vector<rviz::Arrow> arrows_;
+	boost::ptr_vector<rviz::Axes> axes_;
 	bool arrows_dirty_;
 	bool axes_dirty_;
 
@@ -129,19 +128,26 @@ public:
 		axes_length_property_("Axes Length", 1, "Length of each axis, in meters.", this, SLOT(updateAxesGeometry())),
 		axes_radius_property_("Axes Radius", 0.1, "Radius of each axis, in meters.", this, SLOT(updateAxesGeometry()))
 	{
-		//arrow_node_ = scene_node_->createChildSceneNode(); // "dr_pose_array_display_arrows_" + uniqueId(this));
-		//axes_node_  = scene_node_->createChildSceneNode(); // "dr_pose_array_display_axes_" + uniqueId(this));
-
+		arrow_node_ = NULL;
+		axes_node_  = NULL;
 		shape_property_.addOption("Arrow", ShapeType::Arrow);
 		shape_property_.addOption("Axes", ShapeType::Axes);
 		alpha_property_.setMin(0);
 		alpha_property_.setMax(1);
-
 	}
 
-	virtual ~PoseArrayDisplay() {}
+	virtual ~PoseArrayDisplay() {
+		if (arrow_node_) scene_manager_->destroySceneNode(arrow_node_->getName());
+		if (axes_node_)  scene_manager_->destroySceneNode(axes_node_->getName());
+	}
 
 protected:
+	virtual void onInitialize() {
+		MFDClass::onInitialize();
+		arrow_node_ = scene_node_->createChildSceneNode();
+		axes_node_  = scene_node_->createChildSceneNode();
+	}
+
 	/// Process a pose array message.
 	virtual void processMessage(const geometry_msgs::PoseArray::ConstPtr& msg) {
 		if (!setTransform(msg->header)) return;
@@ -160,7 +166,7 @@ protected:
 
 	/// Reset the plugin state.
 	virtual void reset() {
-		rviz::MessageFilterDisplay<geometry_msgs::PoseArray>::reset();
+		MFDClass::reset();
 		poses_.clear();
 		axes_.clear();
 		arrows_.clear();
@@ -195,7 +201,7 @@ protected:
 	/// Update the arrow list.
 	void updateArrows() {
 		while (arrows_.size() < poses_.size()) arrows_.push_back(makeArrow());
-		arrows_.resize(poses_.size(), NULL);
+		while (arrows_.size() > poses_.size()) arrows_.pop_back();
 
 		Ogre::Quaternion adjust_orientation(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y);
 		for (std::size_t i = 0; i < poses_.size(); ++i) {
@@ -207,7 +213,7 @@ protected:
 	/// Update the axes list.
 	void updateAxes() {
 		while (axes_.size() < poses_.size()) axes_.push_back(makeAxes());
-		axes_.resize(poses_.size(), NULL);
+		while (axes_.size() > poses_.size()) axes_.pop_back();
 		for (std::size_t i = 0; i < poses_.size(); ++i) {
 			axes_[i].setPosition(poses_[i].position);
 			axes_[i].setOrientation(poses_[i].orientation);
@@ -221,7 +227,7 @@ protected:
 
 		rviz::Arrow * arrow = new rviz::Arrow(
 			scene_manager_,
-			scene_node_,
+			arrow_node_,
 			shaft_length_property_.getFloat(),
 			shaft_radius_property_.getFloat(),
 			head_length_property_.getFloat(),
@@ -236,7 +242,7 @@ protected:
 	rviz::Axes * makeAxes() {
 		return new rviz::Axes(
 			scene_manager_,
-			scene_node_,
+			axes_node_,
 			axes_length_property_.getFloat(),
 			axes_radius_property_.getFloat()
 		);
@@ -268,12 +274,8 @@ private Q_SLOTS:
 		axes_radius_property_.setHidden(!use_axes);
 
 		updateObjects();
-		for (std::size_t i = 0; i < arrows_.size(); ++i) {
-			arrows_[i].getSceneNode()->setVisible(use_arrow, true);
-		}
-		for (std::size_t i = 0; i < axes_.size(); ++i) {
-			axes_[i].getSceneNode()->setVisible(use_axes, true);
-		}
+		arrow_node_->setVisible(use_arrow);
+		axes_node_->setVisible(use_axes);
 		context_->queueRender();
 	}
 
